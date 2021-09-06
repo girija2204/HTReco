@@ -1,6 +1,6 @@
 import os
 
-from src.data.datagenerator import DataGenerator
+from src.dataloader.datagenerator import DataGenerator
 from src.network.model import HTRModel
 import src.configurations as cfg
 

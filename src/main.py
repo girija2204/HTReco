@@ -1,6 +1,6 @@
 import argparse
 
-from data.datastore import Datastore
+from dataloader.datastore import Datastore
 from htr_service import HTRService
 
 image_dataset = "iam"

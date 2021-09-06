@@ -7,14 +7,16 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_text as tf_text
 
-from src.data.datastore import parse_function, Tokenizer, Datastore, DataGenerator
-from src.data.preprocessor import Preprocessor
+from src.dataloader.datastore import parse_function, Datastore
+from src.dataloader.datagenerator import DataGenerator
+from src.dataloader.preprocessor import Preprocessor
 from src.network.model import HTRModel
 
 
 class test_HTR:
     def __init__(self):
-        self.tokenizer = Tokenizer(string.printable[:95])
+        pass
+        # self.tokenizer = Tokenizer(string.printable[:95])
 
     # def test_parse_function(self):
     #     print(f"test_parse_function")
@@ -31,7 +33,7 @@ class test_HTR:
 
     def test_parse_function(self):
         print(f"test_parse_function")
-        self.tokenizer = Tokenizer(string.printable[:95])
+        # self.tokenizer = Tokenizer(string.printable[:95])
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
@@ -45,7 +47,7 @@ class test_HTR:
 
     def test_parse_function_label_false(self):
         print(f"test_parse_function_label_false")
-        self.tokenizer = Tokenizer(string.printable[:95])
+        # self.tokenizer = Tokenizer(string.printable[:95])
         tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\test_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
         dataset = dataset.map(partial(parse_function, labeled=False),
@@ -56,7 +58,7 @@ class test_HTR:
 
     def test_parse_function_label_true(self):
         print(f"test_parse_function_label_true")
-        self.tokenizer = Tokenizer(string.printable[:95])
+        # self.tokenizer = Tokenizer(string.printable[:95])
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
@@ -72,7 +74,7 @@ class test_HTR:
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
         datastore = Datastore(partitions=partitions)
         print(f"test_parse_function_label_true")
-        self.tokenizer = Tokenizer(string.printable[:95])
+        # self.tokenizer = Tokenizer(string.printable[:95])
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_9-1152.tfrec"]
         dataset = datastore.load(tfrec_filenames, labeled=False)
@@ -95,7 +97,7 @@ class test_HTR:
         prep = Preprocessor()
         tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\test_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
-        dataset = dataset.map(partial(parse_function, labeled=False, tokenizer=self.tokenizer),
+        dataset = dataset.map(partial(parse_function, labeled=False),
                               num_parallel_calls=tf.data.AUTOTUNE)
         records = next(iter(dataset))
         aug_file = prep.augmentation(records)
@@ -106,7 +108,7 @@ class test_HTR:
         tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_9-1152"
                            ".tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
-        dataset = dataset.map(partial(parse_function, labeled=True, tokenizer=self.tokenizer),
+        dataset = dataset.map(partial(parse_function, labeled=True),
                               num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.map(prep.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.shuffle(16 * 10)
