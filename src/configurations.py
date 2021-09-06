@@ -1,10 +1,11 @@
 import os
 
 # Data Storage and Transform
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # HTR
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
-SAMPLES_PER_TFRECORD = 128
-INPUT_SIZE = (1024, 128, 3)
+SAMPLES_PER_TFRECORD = 1024
+INPUT_SIZE = (1024, 128, 1)
+VOCABULARY_SIZE = 128
 STORAGE_FORMAT = "tfrecord"
 
 # Preprocessing
@@ -23,3 +24,4 @@ MONITOR_PARAM = "val_loss"
 STOP_TOLERANCE = 20
 REDUCE_TOLERANCE = 15
 COOLDOWN = 0
+EPOCHS = 1000

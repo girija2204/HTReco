@@ -1,3 +1,4 @@
+import os
 import string
 from datetime import datetime
 from functools import partial
@@ -135,7 +136,7 @@ class test_HTR:
 
         dataset_name = "iam"
         arch = "flor"
-        base_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\handwritten-text-recognition-master\\"
+        base_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\"
         output_path = f"{base_path}output\\{dataset_name}\\{arch}\\"
         checkpoint_path = f"{output_path}\\checkpoint_weights.hdf5"
 

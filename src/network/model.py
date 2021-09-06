@@ -103,7 +103,7 @@ class HTRModel:
             initial_epoch=0,
             steps_per_epoch=None,
             validation_steps=None,
-            validation_freq=None,
+            validation_freq=1,
             max_queue_size=10,
             workers=1,
             use_multiprocessing=False,
