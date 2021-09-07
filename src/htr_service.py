@@ -1,6 +1,9 @@
 import os
 
+import tensorflow_text as tf_text
+
 from src.dataloader.datagenerator import DataGenerator
+from src.network import evaluation
 from src.network.model import HTRModel
 import src.configurations as cfg
 
@@ -15,8 +18,12 @@ class HTRService:
         self.checkpoint_path = os.path.join(self.output_path, "checkpoint_weights.hdf5")
         self.datagen = None
 
-    def get_data(self, partitions):
+    def get_data(self, partitions, training=True):
         self.datagen = DataGenerator(partitions=partitions, data_source=self.datasource)
+        if not training:
+            test_dataset = self.datagen.generate_test_batch(labeled=False)
+            test_all_data = self.datagen.get_all_data(labeled=False)
+            return test_dataset, test_all_data
         dataset = self.datagen.generate_train_batch(labeled=True)
         val_dataset = self.datagen.generate_valid_batch(labeled=True)
         return dataset, val_dataset
@@ -44,7 +51,7 @@ class HTRService:
 
         t_corpus = "\n".join([
             f"Total train images:      {self.datagen.dataset_size['train']}",
-            f"Total validation images: {self.datagen.dataset_size['valid']}",
+            f"Total validation images: {self.datagen.dataset_size['validation']}",
             f"Batch:                   {self.datagen.batch_size}\n",
             f"Total epochs:            {len(loss)}",
             f"Best epoch               {min_val_loss_i + 1}\n",
@@ -57,5 +64,35 @@ class HTRService:
             print(t_corpus)
         return model_history
 
-    def predict(self):
-        pass
+    def start_predicting(self, partitions):
+        test_dataset, test_all_data = self.get_data(partitions, training=False)
+        model = HTRModel(self.architecture, self.input_image_size, self.output_units)
+        model.compile()
+        model.load_checkpoint()
+        model.summary()
+        preds, _ = model.predict(test_dataset,
+                                    steps=self.datagen.steps_per_epoch['test'],
+                                    verbose=1)
+        tokenizer = tf_text.UnicodeCharTokenizer()
+        predicts = [tokenizer.detokenize(predict[0]) for predict in preds]
+        ground_truth = next(iter(test_all_data.batch(self.datagen.dataset_size['test'])))[1]
+        with open(os.path.join(self.output_path, "predict.txt"), "w") as lg:
+            for pd, gt in zip(predicts, ground_truth):
+                lg.write(f"TE_L {gt}\nTE_P {pd}\n")
+
+        evaluate = evaluation.ocr_metrics(predicts=predicts,
+                                          ground_truth=ground_truth,
+                                          norm_accentuation=True,
+                                          norm_punctuation=True)
+
+        e_corpus = "\n".join([
+            f"Total test images:    {self.datagen.dataset_size['test']}",
+            f"Metrics:",
+            f"Character Error Rate: {evaluate[0]:.8f}",
+            f"Word Error Rate:      {evaluate[1]:.8f}",
+            f"Sequence Error Rate:  {evaluate[2]:.8f}"
+        ])
+
+        with open(os.path.join(self.output_path, f"evaluate.txt"), "w") as lg:
+            lg.write(e_corpus)
+            print(e_corpus)

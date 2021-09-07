@@ -27,7 +27,8 @@ class DataGenerator:
                            tfrecord.startswith("train")]
         self.validation_tfrs = [os.path.join(self.data_source, tfrecord) for tfrecord in os.listdir(self.data_source) if
                                 tfrecord.startswith("validation")]
-        self.test_tfrs = [tfrecord for tfrecord in os.listdir(self.data_source) if tfrecord.startswith("test")]
+        self.test_tfrs = [os.path.join(self.data_source, tfrecord) for tfrecord in os.listdir(self.data_source) if
+                          tfrecord.startswith("test")]
         self.dataset_size = {
             "train": get_dataset_size(self.train_tfrs),
             "validation": get_dataset_size(self.validation_tfrs),
@@ -39,12 +40,13 @@ class DataGenerator:
             "test": int(self.dataset_size['test']/cfg.BATCH_SIZE)
         }
 
-    def generate_batch(self, filenames, labeled=True):
+    def generate_batch(self, filenames, labeled=True, training=True):
         dataset = self.datastore.load(filenames, labeled=labeled)
         preprocessor = Preprocessor()
         dataset = dataset.map(preprocessor.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
-        dataset = dataset.shuffle(self.batch_size * 10)
-        dataset = dataset.batch(self.batch_size)
+        if training:
+            dataset = dataset.shuffle(self.batch_size * 10)
+        dataset = dataset.batch(self.batch_size).repeat()
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
         return dataset
 
@@ -61,48 +63,20 @@ class DataGenerator:
     def generate_test_batch(self, filenames=None, labeled=False):
         if filenames is not None and len(filenames) > 0:
             self.test_tfrs = filenames
-        return self.generate_batch(self.test_tfrs, labeled=False)
+        return self.generate_batch(self.test_tfrs, labeled)
 
-# class Tokenizer():
-#     def __init__(self, chars, max_text_length=128):
-#         self.PAD_TK, self.UNK_TK = "¶", "¤"
-#         self.chars = (self.PAD_TK + self.UNK_TK + chars)
-#
-#         self.PAD = self.chars.find(self.PAD_TK)
-#         self.UNK = self.chars.find(self.UNK_TK)
-#
-#         self.vocab_size = len(self.chars)
-#         self.maxlen = max_text_length
-#
-#     def encode(self, text):
-#         """Encode text to vector"""
-#
-#         if isinstance(text, bytes):
-#             text = text.decode()
-#
-#         text = unicodedata.normalize("NFKD", text).encode("ASCII", "ignore").decode("ASCII")
-#         text = " ".join(text.split())
-#
-#         groups = ["".join(group) for _, group in groupby(text)]
-#         text = "".join([self.UNK_TK.join(list(x)) if len(x) > 1 else x for x in groups])
-#         encoded = []
-#
-#         for item in text:
-#             index = self.chars.find(item)
-#             index = self.UNK if index == -1 else index
-#             encoded.append(index)
-#
-#         return np.asarray(encoded)
-#
-#     def decode(self, text):
-#         """Decode vector to text"""
-#
-#         decoded = "".join([self.chars[int(x)] for x in text if x > -1])
-#         decoded = self.remove_tokens(decoded)
-#
-#         return decoded
-#
-#     def remove_tokens(self, text):
-#         """Remove tokens (PAD) from text"""
-#
-#         return text.replace(self.PAD_TK, "").replace(self.UNK_TK, "")
+    """
+    Mostly required for prediction, as while prediction all the records are required at once to get their ground truth.
+    No shuffling, batching or prefetching has been done on this data. By default, labeled is marked as False,
+    as this is only for testing data. If needed in case for training data, then call this with labeled True.
+    Not recommended to use this method for training.
+    """
+    def get_all_data(self, filenames=None, labeled=False):
+        if filenames is not None and len(filenames) > 0:
+            self.test_tfrs = filenames
+        dataset = self.datastore.load(self.test_tfrs, labeled=labeled)
+        preprocessor = Preprocessor()
+        dataset = dataset.map(preprocessor.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
+        return dataset
+
+

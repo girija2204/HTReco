@@ -51,8 +51,9 @@ class Datastore:
         self.format = format
         self.dataset = dict()
         self.input_size = cfg.INPUT_SIZE
-        self.raw_data_path = os.path.join(raw_data_path, datasource)
-        self.dataset_path = os.path.join(dataset_path, datasource)
+        self.datasource=datasource
+        self.raw_data_path = os.path.join(raw_data_path, self.datasource)
+        self.dataset_path = os.path.join(dataset_path, self.datasource)
         for partition_key, partition_value in self.partitions.items():
             self.dataset[partition_key] = {'ground_truth': [], 'file_path': []}
 
@@ -85,23 +86,35 @@ class Datastore:
             print(f"Parition: {partition_key} -> Size: {partition_size}")
             print(f"Total number of tfrecords: {num_tfrecs}")
             total_index = 0
+            ignored_image_count = 0
             for current_tfrec in tqdm.tqdm(range(num_tfrecs)):
-                tfrec_path = os.path.join(self.dataset_path, f"{partition_key}_{current_tfrec}-{partition_size if current_tfrec == num_tfrecs-1 else total_index}.tfrec")
+                tfrec_path = os.path.join(self.dataset_path, f"{partition_key}_{current_tfrec}-{partition_size-ignored_image_count if current_tfrec == num_tfrecs-1 else total_index-ignored_image_count}.tfrec")
                 print(
                     f"{current_tfrec}/{num_tfrecs} - From {total_index} To {total_index + samples_per_tfrec if total_index + samples_per_tfrec < partition_size else partition_size} - Writing at {tfrec_path}")
-                with tf.io.TFRecordWriter(tfrec_path) as writer:
-                    current_index = 0
-                    while current_index < samples_per_tfrec:
-                        if total_index == len(self.dataset[partition_key]['file_path']):
-                            break
-                        image_filepath = self.dataset[partition_key]['file_path'][total_index]
-                        image = tf.io.decode_jpeg(tf.io.read_file(image_filepath))
-                        image = self.preprocess(image)
-                        image_label = self.dataset[partition_key]['ground_truth'][total_index]
-                        example = create_example(image, image_label)
-                        writer.write(example.SerializeToString())
-                        current_index += 1
-                        total_index += 1
+                try:
+                    with tf.io.TFRecordWriter(tfrec_path) as writer:
+                        current_index = 0
+                        while current_index < samples_per_tfrec:
+                            if total_index == len(self.dataset[partition_key]['file_path']):
+                                break
+                            image_filepath = self.dataset[partition_key]['file_path'][total_index]
+                            image = tf.io.decode_jpeg(tf.io.read_file(image_filepath))
+                            if image.shape.as_list()[0] > 10 and image.shape.as_list()[1] > 10:
+                                image = self.preprocess(image)
+                                image_label = self.dataset[partition_key]['ground_truth'][total_index]
+                                example = create_example(image, image_label)
+                                writer.write(example.SerializeToString())
+                            else:
+                                ignored_image_count += 1
+                                print(f"removing image count: {ignored_image_count}")
+                            total_index += 1
+                            current_index += 1
+                except BaseException:
+                    print(image_filepath)
+                    total_index += 1
+                    current_index += 1
+                    ignored_image_count += 1
+                    continue
 
     def read_ground_truth(self, ground_truth_path):
         gt_dict = {}
@@ -122,6 +135,8 @@ class Datastore:
                     folder = line_id.split("-")[0]
                     subfolder = line_id.split("-")[1]
                     file = line_id.split("-")[2]
+                    if self.datasource == "iam_words":
+                        file = '-'.join(line_id.split("-")[2:])
                     file_path = os.path.join(images_path, folder, f"{folder}-{subfolder}",
                                              f"{folder}-{subfolder}-{file}.png")
                     self.dataset[partition_key]['ground_truth'].append(ground_truth[line_id])
