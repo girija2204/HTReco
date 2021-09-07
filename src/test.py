@@ -10,6 +10,7 @@ import tensorflow_text as tf_text
 from src.dataloader.datastore import parse_function, Datastore
 from src.dataloader.datagenerator import DataGenerator
 from src.dataloader.preprocessor import Preprocessor
+from src.dataloader.tokenizer import Tokenizer
 from src.network.model import HTRModel
 
 
@@ -18,32 +19,31 @@ class test_HTR:
         pass
         # self.tokenizer = Tokenizer(string.printable[:95])
 
-    # def test_parse_function(self):
-    #     print(f"test_parse_function")
-    #     self.tokenizer = Tokenizer(string.printable[:95])
-    #     tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
-    #     dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
-    #     tokenizer = tf_text.UnicodeCharTokenizer()
-    #     example = parse_function(next(iter(dataset)), labeled=True)
-    #     label, image = example['ground_truth'], example['image'].numpy()
-    #     tokens = tokenizer.detokenize(label)
-    #     paddings = [[0, 40 - tf.shape(example['ground_truth'])[0].numpy()]]
-    #     example['ground_truth'] = tf.pad(example['ground_truth'], paddings, 'CONSTANT', constant_values=0)
-    #     return image, label
-
     def test_parse_function(self):
         print(f"test_parse_function")
-        # self.tokenizer = Tokenizer(string.printable[:95])
-        tfrec_filenames = [
-            "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
+        tokenizer = Tokenizer(string.printable[:95])
+        tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\iam\\train_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
-        tokenizer = tf_text.UnicodeCharTokenizer()
-        dataset = dataset.map(partial(parse_function, labeled=True),
-                              num_parallel_calls=tf.data.AUTOTUNE)
-        records = next(iter(dataset))
-        label, image = records['ground_truth'], records['image'].numpy()
-        tokens = tokenizer.detokenize(label)
+        example = parse_function(next(iter(dataset)), labeled=True)
+        label, image = example['ground_truth'], example['image'].numpy()
+        tokens = tokenizer.decode(label)
+        paddings = [[0, 40 - tf.shape(example['ground_truth'])[0].numpy()]]
+        example['ground_truth'] = tf.pad(example['ground_truth'], paddings, 'CONSTANT', constant_values=0)
         return image, label
+
+    # def test_parse_function(self):
+    #     print(f"test_parse_function")
+    #     # self.tokenizer = Tokenizer(string.printable[:95])
+    #     tfrec_filenames = [
+    #         "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
+    #     dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
+    #     tokenizer = tf_text.UnicodeCharTokenizer()
+    #     dataset = dataset.map(partial(parse_function, labeled=True),
+    #                           num_parallel_calls=tf.data.AUTOTUNE)
+    #     records = next(iter(dataset))
+    #     label, image = records['ground_truth'], records['image'].numpy()
+    #     tokens = tokenizer.detokenize(label)
+    #     return image, label
 
     def test_parse_function_label_false(self):
         print(f"test_parse_function_label_false")
@@ -208,5 +208,5 @@ class test_HTR:
 # plt.show()
 
 test_htr = test_HTR()
-model_history = test_htr.test_model()
+model_history = test_htr.test_parse_function()
 print(model_history)

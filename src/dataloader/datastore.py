@@ -1,12 +1,13 @@
 import os
+import string
 from functools import partial
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_text as tf_text
 import tqdm
 
 from src import configurations as cfg
+from src.dataloader.tokenizer import Tokenizer
 
 
 def bytes_feature(value):
@@ -17,10 +18,14 @@ def image_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.io.encode_jpeg(value).numpy()]))
 
 
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
+
+
 def create_example(image, ground_truth):
     feature = {
         "input": image_feature(image),
-        "target": bytes_feature(str.encode(ground_truth))
+        "target": _int64_feature(ground_truth)
     }
     return tf.train.Example(features=tf.train.Features(feature=feature))
 
@@ -28,15 +33,13 @@ def create_example(image, ground_truth):
 def parse_function(example, labeled):
     feature_description = {
         "input": tf.io.FixedLenFeature([], tf.string),
-        "target": tf.io.FixedLenFeature([], tf.string)
+        "target": tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
     }
     example = tf.io.parse_single_example(example, feature_description)
     example['input'] = tf.io.decode_image(example["input"])
-    tokenizer = tf_text.UnicodeCharTokenizer()
     if labeled:
-        target = tokenizer.tokenize(example['target'])
-        paddings = [[0, cfg.MAX_SEQUENCE_LENGTH - tf.shape(target)[0]]]
-        example['target'] = tf.pad(target, paddings, 'CONSTANT', constant_values=0)
+        paddings = [[0, cfg.MAX_SEQUENCE_LENGTH - tf.shape(example['target'])[0]]]
+        example['target'] = tf.pad(example['target'], paddings, 'CONSTANT', constant_values=0)
         return example
     return example
 
@@ -46,12 +49,12 @@ class Datastore:
                  raw_data_path=os.path.join(cfg.ROOT_DIR, "data", "raw"),
                  dataset_path=os.path.join(cfg.ROOT_DIR, "data", "processed"),
                  datasource="iam"):
-        # self.tokenizer = Tokenizer(string.printable[:95])
+        self.tokenizer = Tokenizer(string.printable[:95])
         self.partitions = partitions
         self.format = format
         self.dataset = dict()
         self.input_size = cfg.INPUT_SIZE
-        self.datasource=datasource
+        self.datasource = datasource
         self.raw_data_path = os.path.join(raw_data_path, self.datasource)
         self.dataset_path = os.path.join(dataset_path, self.datasource)
         for partition_key, partition_value in self.partitions.items():
@@ -88,7 +91,8 @@ class Datastore:
             total_index = 0
             ignored_image_count = 0
             for current_tfrec in tqdm.tqdm(range(num_tfrecs)):
-                tfrec_path = os.path.join(self.dataset_path, f"{partition_key}_{current_tfrec}-{partition_size-ignored_image_count if current_tfrec == num_tfrecs-1 else total_index-ignored_image_count}.tfrec")
+                tfrec_path = os.path.join(self.dataset_path,
+                                          f"{partition_key}_{current_tfrec}-{partition_size - ignored_image_count if current_tfrec == num_tfrecs - 1 else total_index - ignored_image_count}.tfrec")
                 print(
                     f"{current_tfrec}/{num_tfrecs} - From {total_index} To {total_index + samples_per_tfrec if total_index + samples_per_tfrec < partition_size else partition_size} - Writing at {tfrec_path}")
                 try:
@@ -102,6 +106,7 @@ class Datastore:
                             if image.shape.as_list()[0] > 10 and image.shape.as_list()[1] > 10:
                                 image = self.preprocess(image)
                                 image_label = self.dataset[partition_key]['ground_truth'][total_index]
+                                image_label = self.tokenizer.encode(image_label)
                                 example = create_example(image, image_label)
                                 writer.write(example.SerializeToString())
                             else:
@@ -109,7 +114,8 @@ class Datastore:
                                 print(f"removing image count: {ignored_image_count}")
                             total_index += 1
                             current_index += 1
-                except BaseException:
+                except BaseException as e:
+                    print(e)
                     print(image_filepath)
                     total_index += 1
                     current_index += 1

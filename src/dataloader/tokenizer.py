@@ -1,10 +1,11 @@
 import unicodedata
 from itertools import groupby
+import tensorflow as tf
 
 import numpy as np
 
 
-class Tokenizer():
+class Tokenizer:
     def __init__(self, chars, max_text_length=128):
         self.PAD_TK, self.UNK_TK = "¶", "¤"
         self.chars = (self.PAD_TK + self.UNK_TK + chars)
@@ -15,13 +16,14 @@ class Tokenizer():
         self.vocab_size = len(self.chars)
         self.maxlen = max_text_length
 
+    @tf.function
     def encode(self, text):
         """Encode text to vector"""
 
         if isinstance(text, bytes):
             text = text.decode()
 
-        text = unicodedata.normalize("NFKD", text).encode("ASCII", "ignore").decode("ASCII")
+        text = unicodedata.normalize("NFKD", str(text)).encode("ASCII", "ignore").decode("ASCII")
         text = " ".join(text.split())
 
         groups = ["".join(group) for _, group in groupby(text)]

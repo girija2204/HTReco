@@ -3,19 +3,19 @@ import argparse
 from dataloader.datastore import Datastore
 from htr_service import HTRService
 
-# image_dataset = "iam"
-# images_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\lines\\lines\\"
-# ground_truth_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\ascii\\lines.txt "
-# partition_criteria_path = "C:\\Users\\g.shankar.behera\\My " \
-#                      "Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\largeWriterIndependentTextLineRecognitionTask\\"
-# partitions = {'train': "trainset.txt", 'validation': "validationset1.txt", 'test': "testset.txt"}
-
 image_dataset = "iam"
-images_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\words\\"
-ground_truth_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\ascii\\words.txt "
+images_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\lines\\lines\\"
+ground_truth_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\ascii\\lines.txt "
 partition_criteria_path = "C:\\Users\\g.shankar.behera\\My " \
-                          "Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\largeWriterIndependentTextLineRecognitionTask\\words\\"
+                     "Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\largeWriterIndependentTextLineRecognitionTask\\"
 partitions = {'train': "trainset.txt", 'validation': "validationset1.txt", 'test': "testset.txt"}
+
+# image_dataset = "iam"
+# images_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\words\\"
+# ground_truth_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\ascii\\words.txt "
+# partition_criteria_path = "C:\\Users\\g.shankar.behera\\My " \
+#                           "Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\largeWriterIndependentTextLineRecognitionTask\\words\\"
+# partitions = {'train': "trainset.txt", 'validation': "validationset1.txt", 'test': "testset.txt"}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
