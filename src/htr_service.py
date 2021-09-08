@@ -1,7 +1,5 @@
 import os
 
-import tensorflow_text as tf_text
-
 from src.dataloader.datagenerator import DataGenerator
 from src.network import evaluation
 from src.network.model import HTRModel
@@ -22,7 +20,7 @@ class HTRService:
         self.datagen = DataGenerator(partitions=partitions, data_source=self.datasource)
         if not training:
             test_dataset = self.datagen.generate_test_batch(labeled=False)
-            test_all_data = self.datagen.get_all_data(labeled=False)
+            test_all_data = self.datagen.get_all_data(labeled=True)
             return test_dataset, test_all_data
         dataset = self.datagen.generate_train_batch(labeled=True)
         val_dataset = self.datagen.generate_valid_batch(labeled=True)
@@ -32,7 +30,7 @@ class HTRService:
         dataset, val_dataset = self.get_data(partitions)
         model = HTRModel(self.architecture, self.input_image_size, self.output_units)
         model.compile()
-        model.load_checkpoint()
+        model.load_checkpoint(self.checkpoint_path)
         model.summary()
         callbacks = model.get_callbacks(logdir=self.output_path, checkpoint_path=self.checkpoint_path, verbose=1)
         model_history = model.fit(x=dataset,
@@ -68,14 +66,16 @@ class HTRService:
         test_dataset, test_all_data = self.get_data(partitions, training=False)
         model = HTRModel(self.architecture, self.input_image_size, self.output_units)
         model.compile()
-        model.load_checkpoint()
+        model.load_checkpoint(self.checkpoint_path)
         model.summary()
         preds, _ = model.predict(test_dataset,
                                     steps=self.datagen.steps_per_epoch['test'],
                                     verbose=1)
-        tokenizer = tf_text.UnicodeCharTokenizer()
-        predicts = [tokenizer.detokenize(predict[0]) for predict in preds]
+        predicts = [self.datagen.datastore.tokenizer.decode(predict[0]) for predict in preds]
         ground_truth = next(iter(test_all_data.batch(self.datagen.dataset_size['test'])))[1]
+        gts = []
+        for gt in ground_truth:
+            gts.append(self.datagen.datastore.tokenizer.decode(gt))
         with open(os.path.join(self.output_path, "predict.txt"), "w") as lg:
             for pd, gt in zip(predicts, ground_truth):
                 lg.write(f"TE_L {gt}\nTE_P {pd}\n")

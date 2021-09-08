@@ -1,4 +1,5 @@
 import os
+import math
 
 import tensorflow as tf
 
@@ -35,9 +36,9 @@ class DataGenerator:
             "test": get_dataset_size(self.test_tfrs)
         }
         self.steps_per_epoch = {
-            "train": int(self.dataset_size['train']/cfg.BATCH_SIZE),
-            "validation": int(self.dataset_size['validation']/cfg.BATCH_SIZE),
-            "test": int(self.dataset_size['test']/cfg.BATCH_SIZE)
+            "train": math.ceil(self.dataset_size['train']/cfg.BATCH_SIZE),
+            "validation": math.ceil(self.dataset_size['validation']/cfg.BATCH_SIZE),
+            "test": math.ceil(self.dataset_size['test']/cfg.BATCH_SIZE)
         }
 
     def generate_batch(self, filenames, labeled=True, training=True):
@@ -63,7 +64,7 @@ class DataGenerator:
     def generate_test_batch(self, filenames=None, labeled=False):
         if filenames is not None and len(filenames) > 0:
             self.test_tfrs = filenames
-        return self.generate_batch(self.test_tfrs, labeled)
+        return self.generate_batch(self.test_tfrs, labeled, training=False)
 
     """
     Mostly required for prediction, as while prediction all the records are required at once to get their ground truth.
@@ -71,7 +72,7 @@ class DataGenerator:
     as this is only for testing data. If needed in case for training data, then call this with labeled True.
     Not recommended to use this method for training.
     """
-    def get_all_data(self, filenames=None, labeled=False):
+    def get_all_data(self, filenames=None, labeled=True):
         if filenames is not None and len(filenames) > 0:
             self.test_tfrs = filenames
         dataset = self.datastore.load(self.test_tfrs, labeled=labeled)

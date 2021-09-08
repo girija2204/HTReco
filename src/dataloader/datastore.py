@@ -37,10 +37,10 @@ def parse_function(example, labeled):
     }
     example = tf.io.parse_single_example(example, feature_description)
     example['input'] = tf.io.decode_image(example["input"])
-    if labeled:
-        paddings = [[0, cfg.MAX_SEQUENCE_LENGTH - tf.shape(example['target'])[0]]]
-        example['target'] = tf.pad(example['target'], paddings, 'CONSTANT', constant_values=0)
-        return example
+    paddings = [[0, cfg.MAX_SEQUENCE_LENGTH - tf.shape(example['target'])[0]]]
+    example['target'] = tf.pad(example['target'], paddings, 'CONSTANT', constant_values=0)
+    if not labeled:
+        example['target'] = None
     return example
 
 
