@@ -3,8 +3,8 @@ import argparse
 import sys
 from configparser import ConfigParser
 
-from dataloader.datastore import Datastore
-from htr_service import HTRService
+from src.dataloader.datastore import Datastore
+from src.htr_service import HTRService
 from src import constants
 
 config = ConfigParser()
