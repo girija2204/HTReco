@@ -14,7 +14,7 @@ from tensorflow.keras.constraints import MaxNorm
 from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import CSVLogger, TensorBoard, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
-from src import configurations as cfg
+from src import constants as cfg
 
 
 class HTRModel:
@@ -128,13 +128,14 @@ class HTRModel:
                 workers=1,
                 use_multiprocessing=False,
                 ctc_decode=True):
-        print("Model Predict")
+        # print("Model Predict")
         out = self.model.predict(x=x, batch_size=batch_size, verbose=verbose, steps=steps,
                                  callbacks=callbacks, max_queue_size=max_queue_size, workers=workers,
                                  use_multiprocessing=use_multiprocessing)
+
         if not ctc_decode:
             return np.log(out.clip(min=1e-8)), []
-        print("ctc decode")
+        # print("ctc decode")
         progbar = tf.keras.utils.Progbar(target=steps)
         batch_size = int(np.ceil(len(out) / steps))
         input_length = len(max(out, key=len))

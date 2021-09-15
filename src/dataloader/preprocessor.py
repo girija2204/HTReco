@@ -1,63 +1,61 @@
-import cv2
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+from tensorflow.keras import layers
 
-from src import configurations as cfg
+from src import constants
 
 
 class Preprocessor:
     def __init__(self):
-        pass
+        self.random_invert = self.random_invert()
 
-    def augmentation_cv2(self, dataset,
-                     rotation_range=cfg.ROTATION_RANGE,
-                     scale_range=cfg.SCALE_RANGE,
-                     height_shift_range=cfg.HEIGHT_SHIFT_RANGE,
-                     width_shift_range=cfg.WIDTH_SHIFT_RANGE,
-                     dilate_range=cfg.DILATION_RANGE,
-                     erode_range=cfg.ERODE_RANGE):
-        print(type(dataset))
-        print(dataset.keys())
-        # images = dataset['image']
-        images = dataset['image'].numpy()
-        images = images.astype(np.float32)
-        w, h, _ = images.shape
+    @tf.function
+    def random_invert_img(self, x, p=0.5):
+        if tf.random.uniform([]) < p:
+            x = (255 - x)
+        else:
+            x = x
+        return x
 
-        dilate_kernel = np.ones((int(np.random.uniform(1, dilate_range)),), np.uint8)
-        erode_kernel = np.ones((int(np.random.uniform(1, erode_range)),), np.uint8)
-        height_shift = np.random.uniform(-height_shift_range, height_shift_range)
-        rotation = np.random.uniform(-rotation_range, rotation_range)
-        scale = np.random.uniform(1 - scale_range, 1)
-        width_shift = np.random.uniform(-width_shift_range, width_shift_range)
-
-        trans_map = np.float32([[1, 0, width_shift * w], [0, 1, height_shift * h]])
-        rot_map = cv2.getRotationMatrix2D((w // 2, h // 2), rotation, scale)
-
-        trans_map_aff = np.r_[trans_map, [[0, 0, 1]]]
-        rot_map_aff = np.r_[rot_map, [[0, 0, 1]]]
-        affine_mat = rot_map_aff.dot(trans_map_aff)[:2, :]
-
-        for i in range(images.shape[2]):
-            images[:, :, i] = cv2.warpAffine(images[:, :, i], affine_mat, (h, w), flags=cv2.INTER_NEAREST, borderValue=255)
-            images[:, :, i] = cv2.erode(images[:, :, i], erode_kernel, iterations=1)
-            images[:, :, i] = cv2.dilate(images[:, :, i], dilate_kernel, iterations=1)
-
-        dataset['images']=images
-        return dataset
+    def random_invert(self, factor=0.5):
+        return layers.Lambda(lambda x: self.random_invert_img(x, factor))
 
     def augmentation(self, dataset,
-                     rotation_range=cfg.ROTATION_RANGE,
-                     scale_range=cfg.SCALE_RANGE,
-                     height_shift_range=cfg.HEIGHT_SHIFT_RANGE,
-                     width_shift_range=cfg.WIDTH_SHIFT_RANGE,
-                     dilate_range=cfg.DILATION_RANGE,
-                     erode_range=cfg.ERODE_RANGE):
+                     rotation_range=constants.ROTATION_RANGE,
+                     scale_range=constants.SCALE_RANGE,
+                     height_shift_range=constants.HEIGHT_SHIFT_RANGE,
+                     width_shift_range=constants.WIDTH_SHIFT_RANGE,
+                     dilate_range=constants.DILATION_RANGE,
+                     erode_range=constants.ERODE_RANGE):
         images = dataset['input']
-        # images = dataset[0]
-        images=tf.keras.preprocessing.image.apply_affine_transform(
+        images = tf.keras.preprocessing.image.apply_affine_transform(
             images, theta=0, tx=0, ty=0, shear=0, row_axis=1, col_axis=0,
             channel_axis=2, fill_mode='nearest', cval=0.0, order=1
         )
+
+        # new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
+        # images = tf.image.stateless_random_brightness(
+        #     images, max_delta=0.5, seed=new_seed)
+        # images = tf.image.stateless_random_contrast(
+        #     images, lower=0.2, upper=0.6, seed=new_seed)
+        # images = self.random_invert(images)
         images = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)(images)
         return (images, dataset['target'])
+
+    def preprocess(self, image):
+        image = tf.squeeze(image)
+        unique_vals, indices = tf.unique(tf.reshape(image, [-1]))
+        background = int(unique_vals[np.argmax(np.bincount(indices))])
+        wt, ht, _ = constants.INPUT_SIZE
+        h, w = np.asarray(image).shape
+        f = max((w / wt), (h / ht))
+
+        new_size = [max(min(ht, int(h / f)), 1), max(min(wt, int(w / f)), 1)]
+        image = image[tf.newaxis, ..., tf.newaxis]
+        image = tf.image.resize(image, new_size)[0, ..., 0].numpy()
+
+        target = np.ones([ht, wt], dtype=np.uint8) * background
+        target[0:new_size[0], 0:new_size[1]] = image
+        target = target[..., tf.newaxis]
+        img = tf.image.transpose(target)
+        return img

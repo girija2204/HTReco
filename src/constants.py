@@ -1,12 +1,20 @@
 import os
 
 # Data Storage and Transform
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # HTR
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # HTR
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+PROCESSED_DATA_PATH = os.path.join(ROOT_DIR, "data", "processed")
+TARGET_FOLDER_PATH = os.path.join(ROOT_DIR, "target")
+RESULTS_FOLDER_PATH = os.path.join(TARGET_FOLDER_PATH, "results")
+DEFAULT_SEGMENTATION_LEVEL = "word"
+DEFAULT_PARTITIONING = {'train': "train.txt", 'validation': "val.txt", 'test': "test.txt"}
+
 SAMPLES_PER_TFRECORD = 1024
 INPUT_SIZE = (1024, 128, 1)
 VOCABULARY_SIZE = 128
 STORAGE_FORMAT = "tfrecord"
+IMAGE_FORMAT = "png"
 
 # Preprocessing
 ROTATION_RANGE = 0

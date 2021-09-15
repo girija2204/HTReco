@@ -1,3 +1,8 @@
 *.pyc
 data
-output
+output/**
+target/results/**
+target/*.png
+target/*.jpeg
+target/*.jpg
+target/*.tif

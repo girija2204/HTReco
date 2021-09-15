@@ -1,5 +1,6 @@
 import os
 import string
+import cv2
 from datetime import datetime
 from functools import partial
 
@@ -158,6 +159,16 @@ class test_HTR:
 
         return model_history
 
+    def test_preprocessing_brightness(self):
+        partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
+        datagen = DataGenerator(partitions=partitions)
+        print(f"test_parse_function_label_true")
+        tfrec_filenames = [
+            "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\iam\\train_0-1024.tfrec"]
+        dataset_1 = datagen.generate_train_batch(tfrec_filenames, labeled=True)
+        records_1 = next(iter(dataset_1))
+        print("hello")
+
 
 # test_htr = test_HTR()
 # image = test_htr.test_parse_function_label_false()
@@ -208,5 +219,13 @@ class test_HTR:
 # plt.show()
 
 test_htr = test_HTR()
-model_history = test_htr.test_parse_function()
-print(model_history)
+test_htr.test_preprocessing_brightness()
+
+# img_path="C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\lines\\lines\\a05\\a05-004\\a05-004-00.png"
+# img=cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+# image_enhanced = cv2.equalizeHist(img)
+#
+# plt.imshow(image_enhanced, cmap='gray'), plt.axis("off")
+# plt.show()
+#
+# print("hello")

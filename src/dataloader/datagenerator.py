@@ -3,7 +3,7 @@ import math
 
 import tensorflow as tf
 
-from src import configurations as cfg
+from src import constants
 from src.dataloader.datastore import Datastore
 from src.dataloader.preprocessor import Preprocessor
 
@@ -12,18 +12,16 @@ def get_dataset_size(tfrs):
     size = 0
     for tfr in tfrs:
         records_count = int(os.path.basename(tfr).split(".")[0].split("-")[1])
-        if records_count > size:
-            size = records_count
+        size += records_count
     return size
 
 
 class DataGenerator:
-    def __init__(self, partitions, data_source="iam",
-                 batch_size=cfg.BATCH_SIZE):
+    def __init__(self, data_source="iam",
+                 batch_size=constants.BATCH_SIZE):
         self.batch_size = batch_size
-        self.data_source = os.path.join(cfg.ROOT_DIR, "data", "processed", data_source)
-        self.partitions = partitions
-        self.datastore = Datastore(self.partitions)
+        self.data_source = os.path.join(constants.ROOT_DIR, "data", "processed", data_source)
+        self.datastore = Datastore(datasource=data_source)
         self.train_tfrs = [os.path.join(self.data_source, tfrecord) for tfrecord in os.listdir(self.data_source) if
                            tfrecord.startswith("train")]
         self.validation_tfrs = [os.path.join(self.data_source, tfrecord) for tfrecord in os.listdir(self.data_source) if
@@ -36,19 +34,22 @@ class DataGenerator:
             "test": get_dataset_size(self.test_tfrs)
         }
         self.steps_per_epoch = {
-            "train": math.ceil(self.dataset_size['train']/cfg.BATCH_SIZE),
-            "validation": math.ceil(self.dataset_size['validation']/cfg.BATCH_SIZE),
-            "test": math.ceil(self.dataset_size['test']/cfg.BATCH_SIZE)
+            "train": math.ceil(self.dataset_size['train']/self.batch_size),
+            "validation": math.ceil(self.dataset_size['validation']/self.batch_size),
+            "test": math.ceil(self.dataset_size['test']/self.batch_size)
         }
+        self.preprocessor = Preprocessor()
 
     def generate_batch(self, filenames, labeled=True, training=True):
         dataset = self.datastore.load(filenames, labeled=labeled)
-        preprocessor = Preprocessor()
-        dataset = dataset.map(preprocessor.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
+        # counter = tf.data.experimental.Counter()
+        # dataset = tf.data.Dataset.zip((dataset, (counter, counter)))
+        dataset = dataset.map(self.preprocessor.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
         if training:
             dataset = dataset.shuffle(self.batch_size * 10)
         dataset = dataset.batch(self.batch_size).repeat()
-        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        # dataset = dataset.cache()
+        dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
         return dataset
 
     def generate_train_batch(self, filenames=None, labeled=True):
@@ -79,5 +80,3 @@ class DataGenerator:
         preprocessor = Preprocessor()
         dataset = dataset.map(preprocessor.augmentation, num_parallel_calls=tf.data.AUTOTUNE)
         return dataset
-
-

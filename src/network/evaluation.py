@@ -20,13 +20,13 @@ def ocr_metrics(predicts, ground_truth, norm_accentuation=False, norm_punctuatio
     for (pd, gt) in zip(predicts, ground_truth):
         pd, gt = pd.lower(), gt.lower()
 
-        if norm_accentuation:
-            pd = unicodedata.normalize("NFKD", pd).encode("ASCII", "ignore").decode("ASCII")
-            gt = unicodedata.normalize("NFKD", gt).encode("ASCII", "ignore").decode("ASCII")
-
-        if norm_punctuation:
-            pd = pd.translate(str.maketrans("", "", string.punctuation))
-            gt = gt.translate(str.maketrans("", "", string.punctuation))
+        # if norm_accentuation:
+        #     pd = unicodedata.normalize("NFKD", pd).encode("ASCII", "ignore").decode("ASCII")
+        #     gt = unicodedata.normalize("NFKD", gt).encode("ASCII", "ignore").decode("ASCII")
+        #
+        # if norm_punctuation:
+        #     pd = pd.translate(str.maketrans("", "", string.punctuation))
+        #     gt = gt.translate(str.maketrans("", "", string.punctuation))
 
         pd_cer, gt_cer = list(pd), list(gt)
         dist = editdistance.eval(pd_cer, gt_cer)
