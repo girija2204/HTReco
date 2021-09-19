@@ -106,6 +106,14 @@ class HTRService:
         preds_list = []
         gt_list = []
         test_size = self.datagen.dataset_size['test']
+        # preds, _ = model.predict(test_dataset,steps=self.datagen.steps_per_epoch['test'],verbose=1)
+        # all_test_labels=[]
+        # test_iter = iter(test_dataset)
+        # for index in range(self.datagen.steps_per_epoch['test']):
+        #     test_records=next(test_iter)
+        #     all_test_labels.extend(list(test_records[1].numpy()))
+        # predicts = [self.datagen.datastore.tokenizer.decode(predict[0]) for predict in preds]
+        # all_labels = [self.datagen.datastore.tokenizer.decode(label) for label in all_test_labels]
         for records in iter(test_dataset):
             if count >= test_size:
                 break
@@ -147,29 +155,43 @@ class HTRService:
         model = HTRModel(self.architecture, self.input_image_size, self.output_units)
         model.compile()
         model.load_checkpoint(self.checkpoint_path)
+        images = []
+        filenames = []
         for file in files:
-            # if file.endswith(".png"):
-            image = cv2.imread(os.path.join(data_source, file), cv2.IMREAD_GRAYSCALE)
-            # elif file.endswith(".tif"):
-            #     image = cv2.imread(os.path.join(path, file), cv2.IMREAD_GRAYSCALE)
-            # image = tf.convert_to_tensor(image)
-            # else:
-            #     continue
-            image = image[..., tf.newaxis]
-            image = self.preprocessor.preprocess(image)
-            image_1 = tf.reshape(image, [1, 1024, 128, 1])
-            image_1 = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)(image_1)
-            preds, _ = model.predict(image_1,
-                                     ctc_decode=True)
-            predicts = [tokenizer.decode(predict[0]) for predict in preds]
-            # ground_truth = records[1][index]
-            tttt = tf.reshape(image_1, [1024, 128])
-            ttt = tf.transpose(tttt)
-            plt.imshow(ttt.numpy(), cmap="gray")
-            plt.axis("off")
-            plt.show()
-            print(f"Predicted: {predicts[0]}")
-            # print(f"Ground Truth: {tokenizer.decode(ground_truth)}")
-            # preds_list.append(predicts[0])
-            # gt_list.append(htrService.datagen.datastore.tokenizer.decode(ground_truth))
-            print("\n")
+            if file.endswith(".png") or file.endswith("jpeg") or file.endswith("tif"):
+                image = cv2.imread(os.path.join(data_source, file), cv2.IMREAD_GRAYSCALE)
+                image = image[..., tf.newaxis]
+                image = self.preprocessor.preprocess(image)
+                image = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)(image)
+                images.append(image)
+                filenames.append(file)
+
+        images = tf.convert_to_tensor(images)
+        preds, _ = model.predict(images,
+                                 ctc_decode=True)
+        predicts = [tokenizer.decode(predict[0]) for predict in preds]
+        filename = time.strftime('%Y%m%d%H%M%S')
+        with open(os.path.join(results_folder, f"{filename}.txt"), "w") as res_file:
+            for index, image in enumerate(iter(images)):
+                res_file.write(f"{filenames[index]} -> {predicts[index]}\n")
+
+        fig = plt.figure(figsize=(20, 20))
+        import math
+        if len(images) >= 50:
+            rows = 10
+            cols = 5
+            plot_images = images[:50]
+            plot_predicts = predicts[:50]
+        else:
+            rows = math.ceil(len(images) / 5)
+            cols = 5
+            plot_images = images
+            plot_predicts = predicts
+
+        for index in range(1, len(plot_images)):
+            fig.add_subplot(rows, cols, index)
+            plt.imshow(tf.transpose(tf.reshape(plot_images[index], [1024, 128])), cmap="gray")
+            plt.axis('off')
+            plt.title(f"Predicted: {plot_predicts[index]}", loc='left')
+        plt.show()
+        fig.savefig(os.path.join(results_folder, f"{filename}.png"))

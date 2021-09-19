@@ -147,7 +147,13 @@ class Datastore:
     def cvl(self):
         for partition_key, partition_value in constants.DEFAULT_PARTITIONING.items():
             with open(os.path.join(self.partition_criteria_path, partition_value), 'r') as pc:
+                ignore_count = 0
                 for file_path in pc.read().splitlines():
+                    gt = os.path.basename(file_path).split(".")[0].split("-")[-1]
+                    if len(gt) == 0:
+                        ignore_count += 1
+                        print(f"{ignore_count}: Ignoring file at: {file_path}\n, length: 0")
+                        continue
                     self.dataset[partition_key]['ground_truth'].append(os.path.basename(file_path).split(".")[0].split("-")[-1])
                     self.dataset[partition_key]['file_path'].append(file_path)
 

@@ -31,10 +31,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.transform:
-        images_path = args.images_path if args.images_path is not None else config['images_path']
-        ground_truth_path = args.ground_truth_path if args.ground_truth_path is not None else config['ground_truth_path']
-        partition_criteria_path = args.partition_criteria_path if args.partition_criteria_path is not None else config['partition_criteria_path']
-        if images_path is None or ground_truth_path is None or partition_criteria_path is None:
+        images_path = args.images_path if args.images_path is not None else config['runtime arguments']['images_path']
+        ground_truth_path = args.ground_truth_path if args.ground_truth_path is not None else config['runtime arguments']['ground_truth_path']
+        partition_criteria_path = args.partition_criteria_path if args.partition_criteria_path is not None else config['runtime arguments']['partition_criteria_path']
+        if images_path is None or partition_criteria_path is None:
             print(f"error")
             sys.exit("Please provide images_path/ground_truth_path/partition_criteria_path")
         dataset_path = args.dataset_path
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         htrService = HTRService(architecture=args.architecture, datasource=args.source,
                                 segmentation_level=args.segmentation_level)
         output_file = htrService.predict(data_source, results_folder)
-        print(f"Task: Prediction - Status: ended - Please find the prediction results at {output_file}.")
+        print(f"Task: Prediction - Status: ended - Please find the prediction results at {results_folder}.")
     elif args.benchmark:
         print(f"Running the benchmark service...")
         batch_sizes = [16, 32, 64, 128, 256, 512]

@@ -73,7 +73,7 @@ class test_HTR:
 
     def test_datastore_load(self):
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
-        datastore = Datastore(partitions=partitions)
+        datastore = Datastore()
         print(f"test_parse_function_label_true")
         # self.tokenizer = Tokenizer(string.printable[:95])
         tfrec_filenames = [
@@ -85,7 +85,7 @@ class test_HTR:
 
     def test_datagenerator_generate_batch(self):
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
-        datagen = DataGenerator(partitions=partitions)
+        datagen = DataGenerator()
         print(f"test_parse_function_label_true")
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
@@ -119,7 +119,7 @@ class test_HTR:
 
     def test_datagenerator_generate_batch_1(self):
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
-        datagen = DataGenerator(partitions=partitions)
+        datagen = DataGenerator()
         print(f"test_parse_function_label_true")
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
@@ -128,7 +128,7 @@ class test_HTR:
 
     def test_model(self):
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
-        datagen = DataGenerator(partitions=partitions)
+        datagen = DataGenerator()
         print(f"test_parse_function_label_true")
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\train_0-0.tfrec"]
@@ -161,13 +161,31 @@ class test_HTR:
 
     def test_preprocessing_brightness(self):
         partitions = {'train': "trainset_new.txt", 'validation': "validationset_new.txt", 'test': "testset_new.txt"}
-        datagen = DataGenerator(partitions=partitions)
+        datagen = DataGenerator()
         print(f"test_parse_function_label_true")
         tfrec_filenames = [
             "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\iam\\train_0-1024.tfrec"]
         dataset_1 = datagen.generate_train_batch(tfrec_filenames, labeled=True)
         records_1 = next(iter(dataset_1))
         print("hello")
+
+    def test_cvl_data(self):
+        tokenizer = Tokenizer(string.printable[:95], 128)
+        datagen = DataGenerator(data_source="cvl", batch_size=16)
+        tfrec_filenames = [
+            "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\cvl\\train_0-1024.tfrec"]
+        dataset_1 = datagen.generate_train_batch(datagen.train_tfrs, labeled=True)
+        count = 0
+        fail_count = 0
+        for records in iter(dataset_1):
+            for record in records[1]:
+                print(count, fail_count)
+                count += 1
+                if len(tokenizer.decode(record)) == 0:
+                    fail_count += 1
+                    print(fail_count, tokenizer.decode(record), len(tokenizer.decode(record)))
+        print("hello")
+
 
 
 # test_htr = test_HTR()
@@ -219,7 +237,7 @@ class test_HTR:
 # plt.show()
 
 test_htr = test_HTR()
-test_htr.test_preprocessing_brightness()
+test_htr.test_cvl_data()
 
 # img_path="C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\lines\\lines\\a05\\a05-004\\a05-004-00.png"
 # img=cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
