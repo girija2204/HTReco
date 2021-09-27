@@ -13,7 +13,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\g.shankar.behera\AppData\Loca
 
 files_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\ocr_sample_files\\"
 images_folder = os.path.join(files_path, "ocr_sample_images")
-image_filename = "invoice2.jpg"
+image_filename = "image0_0.png"
 output_images = os.path.join(images_folder, "output_images")
 os.makedirs(output_images, exist_ok=True)
 

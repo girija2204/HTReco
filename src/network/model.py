@@ -124,7 +124,8 @@ class HTRModel:
                 verbose=0,
                 steps=1,
                 callbacks=None,
-                max_queue_size=10,
+                # max_queue_size=10,
+                max_queue_size=None,
                 workers=1,
                 use_multiprocessing=False,
                 ctc_decode=True):

@@ -7,7 +7,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\g.shankar.behera\AppData\Loca
 
 files_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\ocr_sample_files\\"
 pdf_files = "ocr_sample_files"
-filename = "dental_handwritten.pdf"
+filename = "4c70cdfb-f126-46c1-8175-e039966bc3af.pdf"
 images_folder = os.path.join(files_path, "ocr_sample_images")
 
 

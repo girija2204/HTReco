@@ -84,13 +84,13 @@ def preprocess(image_path):
             color = (0,0,255) if int(probabilities[0][0] * 100) > int(ocr_df.iloc[idx]['conf']) else \
                 (0,255,0)
             img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 1)
-            img = cv2.putText(img, text_to_write, (x, y), cv2.FONT_HERSHEY_PLAIN, 0.7, color, 1)
+            img = cv2.putText(img, text_to_write, (x, y), cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
             new_img = cv2.rectangle(new_img, (x, y), (x + w, y + h), (255, 0, 0), 1)
-            new_img = cv2.putText(new_img, predicts[0], (x, y), cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255), 1)
+            new_img = cv2.putText(new_img, predicts[0], (x, y), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
             print(f"Predicted: {idx}/{coordinates.shape[0]} - max: {text_to_write} - htr: {predicts[0]}")
             results_df.loc[idx] = (
             x, y, w, h, int(probabilities[0][0] * 100), predicts[0], int(ocr_df.iloc[idx]['conf']), ocr_df.iloc[idx]['text'])
-            # cv2.imshow("new_img",new_img)
+            # cv2.imshow("img",img)
             # cv2.waitKey(0)
         except ValueError as ve:
             print(ve)
@@ -102,9 +102,9 @@ def preprocess(image_path):
 
 
 files_path = "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\ocr_sample_files\\"
-images_folder = os.path.join(files_path, "ocr_sample_images")
-output_images = os.path.join(images_folder, "output_images")
-output_csvs = os.path.join(images_folder, "output_new_csvs")
+images_folder = os.path.join(files_path, "ocr_sample_images\\ocr tool comparison\\original images\\")
+output_images = os.path.join(files_path, "ocr_sample_images\\ocr tool comparison\\pytesseract\\images\\")
+output_csvs = os.path.join(files_path, "ocr_sample_images\\ocr tool comparison\\pytesseract\\csvs\\")
 for image_filename in os.listdir(images_folder):
     if not image_filename.endswith(".jpg") and not image_filename.endswith(".png"):
         continue

@@ -6,3 +6,4 @@ target/*.png
 target/*.jpeg
 target/*.jpg
 target/*.tif
+.idea/**

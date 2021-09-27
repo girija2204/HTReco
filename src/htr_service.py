@@ -106,6 +106,7 @@ class HTRService:
         preds_list = []
         gt_list = []
         test_size = self.datagen.dataset_size['test']
+        # predicting the whole test dataset in batches - NOT WORKING
         # preds, _ = model.predict(test_dataset,steps=self.datagen.steps_per_epoch['test'],verbose=1)
         # all_test_labels=[]
         # test_iter = iter(test_dataset)
@@ -114,6 +115,7 @@ class HTRService:
         #     all_test_labels.extend(list(test_records[1].numpy()))
         # predicts = [self.datagen.datastore.tokenizer.decode(predict[0]) for predict in preds]
         # all_labels = [self.datagen.datastore.tokenizer.decode(label) for label in all_test_labels]
+        # predicts sequentially - consumes a lot of time
         for records in iter(test_dataset):
             if count >= test_size:
                 break

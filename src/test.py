@@ -1,10 +1,13 @@
 import os
 import string
+import time
+
 import cv2
 from datetime import datetime
 from functools import partial
 
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 import tensorflow_text as tf_text
 
@@ -13,6 +16,7 @@ from src.dataloader.datagenerator import DataGenerator
 from src.dataloader.preprocessor import Preprocessor
 from src.dataloader.tokenizer import Tokenizer
 from src.network.model import HTRModel
+from src import constants
 
 
 class test_HTR:
@@ -23,7 +27,8 @@ class test_HTR:
     def test_parse_function(self):
         print(f"test_parse_function")
         tokenizer = Tokenizer(string.printable[:95])
-        tfrec_filenames = ["C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\iam\\train_0-0.tfrec"]
+        tfrec_filenames = [
+            "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\data\\processed\\iam\\train_0-0.tfrec"]
         dataset = tf.data.TFRecordDataset(filenames=tfrec_filenames)
         example = parse_function(next(iter(dataset)), labeled=True)
         label, image = example['ground_truth'], example['image'].numpy()
@@ -186,6 +191,54 @@ class test_HTR:
                     print(fail_count, tokenizer.decode(record), len(tokenizer.decode(record)))
         print("hello")
 
+    def test_predict(self, data_source, results_folder):
+        preprocessor = Preprocessor()
+        files = os.listdir(data_source)
+        tokenizer = Tokenizer(string.printable[:95])
+        model = HTRModel("flor", constants.INPUT_SIZE, constants.VOCABULARY_SIZE, top_paths=5)
+        model.compile()
+        model.load_checkpoint(
+            "C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\output\\word\\flor\\checkpoint_weights.hdf5")
+        images = []
+        filenames = []
+        for file in files:
+            if file.endswith(".png") or file.endswith("jpeg") or file.endswith("tif"):
+                image = cv2.imread(os.path.join(data_source, file), cv2.IMREAD_GRAYSCALE)
+                image = image[..., tf.newaxis]
+                image = preprocessor.preprocess(image)
+                image = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)(image)
+                images.append(image)
+                filenames.append(file)
+
+        images = tf.convert_to_tensor(images)
+        preds, probs = model.predict(images,
+                                     ctc_decode=True)
+        predicts = [tokenizer.decode(predict[0]) for predict in preds]
+        filename = time.strftime('%Y%m%d%H%M%S')
+        with open(os.path.join(results_folder, f"{filename}.txt"), "w") as res_file:
+            for index, image in enumerate(iter(images)):
+                res_file.write(f"{filenames[index]} -> {predicts[index]}\n")
+
+        fig = plt.figure(figsize=(20, 20))
+        import math
+        if len(images) >= 50:
+            rows = 10
+            cols = 5
+            plot_images = images[:50]
+            plot_predicts = predicts[:50]
+        else:
+            rows = math.ceil(len(images) / 5)
+            cols = 5
+            plot_images = images
+            plot_predicts = predicts
+
+        for index in range(1, len(plot_images)):
+            fig.add_subplot(rows, cols, index)
+            plt.imshow(tf.transpose(tf.reshape(plot_images[index], [1024, 128])), cmap="gray")
+            plt.axis('off')
+            plt.title(f"Predicted: {plot_predicts[index]}", loc='left')
+        plt.show()
+        fig.savefig(os.path.join(results_folder, f"{filename}.png"))
 
 
 # test_htr = test_HTR()
@@ -237,7 +290,26 @@ class test_HTR:
 # plt.show()
 
 test_htr = test_HTR()
-test_htr.test_cvl_data()
+test_htr.test_predict("C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\HTR\\target",constants.RESULTS_FOLDER_PATH)
+
+# os.path.join(constants.ROOT_DIR, "CTCWordBeamSearch")
+# from word_beam_search import WordBeamSearch
+#
+# corpus = 'a ba'  # two words "a" and "ba", separated by whitespace
+# chars = 'ab '  # the characters that can be recognized (in this order)
+# word_chars = 'ab'  # characters that form words
+#
+# # RNN output
+# # 3 time-steps and 4 characters per time time ("a", "b", " ", CTC-blank)
+# mat = np.array([[[0.9, 0.1, 0.0, 0.0]],
+#                 [[0.0, 0.0, 0.0, 1.0]],
+#                 [[0.6, 0.4, 0.0, 0.0]]])
+#
+# # initialize word beam search (only do this once in your code)
+# wbs = WordBeamSearch(25, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), word_chars.encode('utf8'))
+#
+# # compute label string
+# label_str = wbs.compute(mat)
 
 # img_path="C:\\Users\\g.shankar.behera\\My Files\\Project\\Code\\MyCode\\data files\\datasets\\iam\\lines\\lines\\a05\\a05-004\\a05-004-00.png"
 # img=cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
